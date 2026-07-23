@@ -5,6 +5,7 @@ public interface IAuthService
 {
     string GetAccessToken();
     string GetRefreshToken();
+    string GenerateOTP();
     ClaimsIdentity GetCurrentIdentity();
     int GetCurrentUserId();
     string GetCurrentUserName();

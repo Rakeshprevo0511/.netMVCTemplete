@@ -18,6 +18,10 @@ public class AdminController : BaseApiController
     public IHttpActionResult Login([FromBody] LoginRequest request)
     {
         var result = _adminService.Login(request);
+        if (result != null)
+        {
+            var otp = _authService.GenerateOTP();
+        }
         return Content((HttpStatusCode)result.StatusCode, result);
     }
 
@@ -71,6 +75,7 @@ public class AdminController : BaseApiController
         var users = await _userService.GetUsersAsync(pageNumber, pageSize, search);
         return Ok(ApiResponse<object>.SuccessResponse(users, "Users fetched successfully."));
     }
+
     [HttpPost]
     [Route("set-content")]
     public async Task<IHttpActionResult> SaveContent(SaveContentModel model)

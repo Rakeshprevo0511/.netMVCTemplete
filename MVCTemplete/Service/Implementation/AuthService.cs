@@ -29,6 +29,11 @@ public class AuthService : IAuthService
     {
         return HttpContext.Current.Request.Cookies["RefreshToken"]?.Value;
     }
+    public string GenerateOTP()
+    {
+        string otp = Configuration.GenerateOTP(6); 
+        return otp.ToString();
+    }
 
     public ClaimsIdentity GetCurrentIdentity()
     {

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HtmlEditor demo</title>
+<link rel="stylesheet" href="css/editor.css">
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; }
+  h1 { font-size: 20px; }
+  .row { display: flex; gap: 8px; margin: 12px 0; }
+  button { padding: 6px 12px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>HtmlEditor demo</h1>
+  <div class="row">
+    <button id="btnTheme">Toggle theme</button>
+    <button id="btnGetHTML">Log getHTML() to console</button>
+  </div>
+
+  <div id="editor"></div>
+
+  <script src="js/html-editor.js"></script>
+  <script>
+    // Two lines to integrate:
+    const editor = HtmlEditor.create({
+      element: "#editor",
+      theme: "light",
+      height: "560px"
+    });
+
+    editor.on('change', (html) => {
+      // console.log('changed', html);
+    });
+
+    let dark = false;
+    document.getElementById('btnTheme').addEventListener('click', () => {
+      dark = !dark;
+      editor.setTheme(dark ? 'dark' : 'light');
+    });
+    document.getElementById('btnGetHTML').addEventListener('click', () => {
+      console.log(editor.getHTML());
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+﻿@{
+    ViewBag.Title = "Content Editor";
+}
+
+<div class="container mt-3">
+
+    <div class="mb-3">
+        <label class="form-label">Title</label>
+        <input type="text"
+               id="txtTitle"
+               class="form-control"
+               placeholder="Enter Title" />
+    </div>
+
+    <text id="editor"></text>
+
+    <div class="mt-3">
+        <button type="button" class="btn btn-success" id="btnSave">
+            Save Content
+        </button>
+
+        <button type="button" class="btn btn-secondary" id="btnClear">
+            Clear
+        </button>
+    </div>
+
+    <hr />
+
+    <h4>Saved Contents</h4>
+
+    <table class="table table-bordered table-striped" id="tblContent">
+        <thead class="table-dark">
+            <tr>
+                <th style="width:70px;">Id</th>
+                <th>Title</th>
+                <th style="width:180px;">Created Date</th>
+                <th style="width:100px;">Action</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="~/Content/HtmlTemplateEditor/html-editor.bundle.js"></script>
+
+<script>
+
+    let ContentId = 0;
+
+    const editor = HtmlEditor.create({
+        element: "#editor"
+    });
+
+    $(document).ready(function () {
+
+        loadAllContent();
+
+    });
+
+    //================ SAVE ==================
+
+    $("#btnSave").click(function () {
+
+        var model = {
+            Id: ContentId,
+            Title: $("#txtTitle").val().trim(),
+            HtmlContent: editor.getHTML()
+        };
+        const html = editor.getHTML();
+
+        const maxSize = 1024 * 1024; // 1 MB
+
+        const size = new Blob([html]).size;
+
+        
+        if (model.Title == "") {
+            showToast("Please enter title.","warning");
+            return;
+        }
+
+        if (model.HtmlContent.trim() == "") {
+            showToast("Please enter content.", "error");
+            return;
+        }
+        if (size > maxSize) {
+            showToast("HTML content cannot exceed 1 MB.", "warning");
+            return;
+        }
+        $.ajax({
+
+            url: "/api/admin/set-content",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(model),
+
+            beforeSend: function () {
+                $("#btnSave").prop("disabled", true).text("Saving...");
+            },
+
+            success: function (res) {
+
+                $("#btnSave").prop("disabled", false).text("Save Content");
+
+                if (res.Success) {
+
+                    showToast(res.Message);
+
+                    clearForm();
+
+                    loadAllContent();
+
+                }
+                else {
+
+                    showToast(res.Message,"error");
+
+                }
+
+            },
+
+            error: function (xhr) {
+
+                $("#btnSave").prop("disabled", false).text("Save Content");
+
+                showToast(xhr.responseText, "error");
+
+            }
+
+        });
+
+    });
+
+    //================ LOAD ALL ==================
+
+    function loadAllContent() {
+
+        $.ajax({
+
+            url: "/api/admin/get-all-content",
+            type: "GET",
+
+            success: function (res) {
+
+                console.log(res);
+
+                var tbody = $("#tblContent tbody");
+
+                tbody.empty();
+
+                if (!res.Success) {
+
+                    tbody.append('<tr><td colspan="4" class="text-center">No Record Found</td></tr>');
+                    return;
+
+                }
+
+                if (!res.Data || res.Data.length == 0) {
+
+                    tbody.append('<tr><td colspan="4" class="text-center">No Record Found</td></tr>');
+                    return;
+
+                }
+
+                $.each(res.Data, function (i, item) {
+
+                    var date = "";
+
+                    if (item.CreatedDate != null) {
+
+                        date = item.CreatedDate.substring(0, 10);
+
+                    }
+
+                    tbody.append(
+                        '<tr>' +
+                        '<td>' + item.Id + '</td>' +
+                        '<td>' + item.Title + '</td>' +
+                        '<td>' + date + '</td>' +
+                        '<td>' +
+                        '<button class="btn btn-primary btn-sm btnEdit" data-id="' + item.Id + '">Edit</button>' +
+                        '</td>' +
+                        '</tr>'
+                    );
+
+                });
+
+            },
+
+            error: function (xhr) {
+
+                console.log(xhr);
+
+            }
+
+        });
+
+    }
+
+    //================ EDIT ==================
+
+    $(document).on("click", ".btnEdit", function () {
+
+        var id = $(this).data("id");
+
+        $.ajax({
+
+            url: "/api/admin/get-content/" + id,
+            type: "GET",
+
+            success: function (res) {
+
+                if (!res.Success) {
+
+                    showToast(res.Message, "error");
+                    return;
+
+                }
+
+                if (!res.Data || res.Data.length == 0) {
+
+                    showToast("Record not found.", "error");
+                    return;
+
+                }
+
+                var item = res.Data[0];
+
+                ContentId = item.Id;
+
+                $("#txtTitle").val(item.Title);
+
+                editor.setHTML(item.HtmlContent);
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+
+            }
+
+        });
+
+    });
+
+    //================ CLEAR ==================
+
+    $("#btnClear").click(function () {
+
+        clearForm();
+
+    });
+
+    function clearForm() {
+
+        ContentId = 0;
+
+        $("#txtTitle").val("");
+
+        editor.setHTML("");
+
+    }
+
+</script>

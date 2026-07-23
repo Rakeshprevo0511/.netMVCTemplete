@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    @Styles.Render("~/Content/css")
+    <style>
+        /* Hide the real content immediately, before any JS runs, so there's no flash */
+        #appContent {
+            display: none;
+        }
+
+        #authOverlay {
+            position: fixed;
+            inset: 0;
+            background: #fff;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+            #authOverlay .spinner-border {
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+    </style>
+
+</head>
+<body>
+
+    <!-- Shown until auth is confirmed -->
+    <div id="authOverlay">
+        <div class="spinner-border text-primary" role="status"></div>
+        <span class="text-muted">Loading...</span>
+    </div>
+
+    <!-- Real page content, hidden until auth is confirmed -->
+    <div id="appContent">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark">
+            <div class="container">
+                @Html.ActionLink("Application name", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Toggle navigation" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">@Html.ActionLink("Home", "Index", "Home", null, new { @class = "nav-link" })</li>
+                        <li class="nav-item">@Html.ActionLink("About", "About", "Home", null, new { @class = "nav-link" })</li>
+                        <li class="nav-item">@Html.ActionLink("Contact", "Contact", "Home", null, new { @class = "nav-link" })</li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a href="javascript:void(0);" class="nav-link text-danger" onclick="logout()">
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="container-fluid body-content">
+            @RenderBody()
+            <hr />
+            <footer>
+                <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+            </footer>
+        </div>
+    </div>
+
+    @* jQuery + Bootstrap MUST load before any script that uses $ or data-bs-* *@
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+        var isRefreshing = false;
+
+        $(document).ajaxError(function (event, xhr, settings) {
+
+            if (xhr.status !== 401)
+                return;
+
+            if (settings.url.indexOf("/api/admin/refresh") >= 0)
+                return;
+
+            if (isRefreshing)
+                return;
+
+            isRefreshing = true;
+
+            refreshAccessToken();
+        });
+        $(document).ready(function () {
+
+            checkAuthentication();
+
+        });
+
+        function showApp() {
+            document.getElementById("authOverlay").style.display = "none";
+            document.getElementById("appContent").style.display = "block";
+        }
+
+        function checkAuthentication() {
+
+            $.ajax({
+                url: "/api/admin/validate-token",
+                type: "POST",
+                success: function () {
+
+                    showApp();
+
+                },
+                error: function (xhr) {
+
+                    if (xhr.status !== 401)
+                        redirectToLogin();
+
+                }
+            });
+
+        }
+
+        function refreshAccessToken() {
+
+            $.ajax({
+                url: "/api/admin/refresh",
+                type: "POST",
+                success: function () {
+
+                    isRefreshing = false;
+
+                    location.reload();   // simplest solution
+                },
+                error: function () {
+
+                    isRefreshing = false;
+
+                    redirectToLogin();
+                }
+            });
+        }
+
+        function redirectToLogin() {
+            localStorage.clear();
+            window.location.href = "/Home/Login";
+        }
+
+        function logout() {
+            $.ajax({
+                url: "/api/admin/logout",
+                type: "POST",
+                contentType: "application/json",
+                complete: function () {
+                    window.location.href = "/Home/Login";
+                }
+            });
+        }
+        function showToast(message, type = "success") {
+
+            var toast = $("#appToast");
+
+            toast.removeClass("text-bg-success text-bg-danger text-bg-warning text-bg-info");
+
+            switch (type) {
+
+                case "success":
+                    toast.addClass("text-bg-success");
+                    break;
+
+                case "error":
+                    toast.addClass("text-bg-danger");
+                    break;
+
+                case "warning":
+                    toast.addClass("text-bg-warning");
+                    break;
+
+                default:
+                    toast.addClass("text-bg-info");
+                    break;
+            }
+
+            $("#toastBody").text(message);
+
+            var bsToast = bootstrap.Toast.getOrCreateInstance(
+                document.getElementById("appToast"),
+                {
+                    delay: 3000
+                });
+
+            bsToast.show();
+        }
+    </script>
+    @RenderSection("scripts", false)
+    <div class="position-fixed top-0 end-0 p-3" style="z-index:11000">
+
+        <div id="appToast"
+             class="toast align-items-center border-0"
+             role="alert"
+             aria-live="assertive"
+             aria-atomic="true">
+
+            <div class="d-flex">
+
+                <div id="toastBody" class="toast-body">
+                    Message
+                </div>
+
+                <button type="button"
+                        class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast">
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+</body>
+</html>

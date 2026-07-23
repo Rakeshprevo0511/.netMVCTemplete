@@ -1,0 +1,318 @@
+/* ==========================================================================
+   HtmlEditor — reusable editor styles
+   Scoped under .hte-root so multiple instances / host page styles never clash.
+   Theme is switched via [data-hte-theme="light|dark"] on the root element.
+   ========================================================================== */
+
+.hte-root {
+  position: relative;
+  --hte-paper: #F6F4EE;
+  --hte-surface: #FFFFFF;
+  --hte-ink: #20242A;
+  --hte-ink-soft: #6B7178;
+  --hte-accent: #146C6A;
+  --hte-accent-dark: #0E5250;
+  --hte-accent-soft: #E4F1EF;
+  --hte-border: #E1DCCF;
+  --hte-code-bg: #1e1e1e;
+  --hte-code-fg: #d4d4d4;
+  --hte-radius: 8px;
+
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--hte-ink);
+  background: var(--hte-paper);
+  border: 1px solid var(--hte-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(32,36,42,0.04), 0 8px 24px rgba(32,36,42,0.05);
+}
+.hte-root, .hte-root *, .hte-root *::before, .hte-root *::after { box-sizing: border-box; }
+
+.hte-root[data-hte-theme="dark"] {
+  --hte-paper: #1B1D21;
+  --hte-surface: #23262B;
+  --hte-ink: #E8E9EC;
+  --hte-ink-soft: #9A9FA8;
+  --hte-accent: #35C9C1;
+  --hte-accent-dark: #6FE0D9;
+  --hte-accent-soft: #1F3836;
+  --hte-border: #33363C;
+  --hte-code-bg: #16171A;
+  --hte-code-fg: #d4d4d4;
+}
+
+/* ---------- Toolbar ---------- */
+.hte-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--hte-border);
+  background: var(--hte-surface);
+}
+.hte-tgroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  border-right: 1px solid var(--hte-border);
+}
+.hte-tgroup:last-of-type { border-right: none; }
+.hte-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hte-ink);
+  line-height: 1;
+  transition: background .12s ease, color .12s ease;
+}
+.hte-btn svg { width: 16px; height: 16px; stroke: var(--hte-ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hte-btn:hover { background: var(--hte-accent-soft); color: var(--hte-accent-dark); }
+.hte-btn:hover svg { stroke: var(--hte-accent-dark); }
+.hte-btn.hte-italic { font-style: italic; }
+.hte-btn.hte-underline { text-decoration: underline; }
+.hte-btn.hte-strike { text-decoration: line-through; }
+.hte-btn.hte-active { background: var(--hte-accent-soft); color: var(--hte-accent-dark); }
+
+.hte-sel {
+  height: 32px;
+  border: 1px solid var(--hte-border);
+  border-radius: 6px;
+  background: var(--hte-surface);
+  color: var(--hte-ink);
+  font-size: 12.5px;
+  padding: 0 6px;
+  cursor: pointer;
+}
+
+.hte-spacer { flex: 1; }
+
+.hte-wrap { position: relative; }
+.hte-btn-wide {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--hte-border);
+  border-radius: 6px;
+  background: var(--hte-surface);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--hte-ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hte-btn-wide:hover { border-color: var(--hte-accent); color: var(--hte-accent-dark); }
+.hte-btn-primary { background: var(--hte-accent); color: #fff; border-color: var(--hte-accent); }
+.hte-btn-primary:hover { background: var(--hte-accent-dark); color: #fff; }
+
+.hte-panel {
+  position: absolute;
+  top: 38px;
+  right: 0;
+  width: 260px;
+  background: var(--hte-surface);
+  border: 1px solid var(--hte-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(32,36,42,0.14);
+  padding: 6px;
+  z-index: 40;
+  display: none;
+}
+.hte-panel.hte-open { display: block; }
+.hte-row { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+.hte-row:hover { background: var(--hte-accent-soft); }
+.hte-row .hte-name { font-size: 13px; font-weight: 600; }
+.hte-row .hte-desc { font-size: 11.5px; color: var(--hte-ink-soft); }
+.hte-divider { height: 1px; background: var(--hte-border); margin: 4px 2px; }
+.hte-save-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 10px; font-size: 12.5px; font-weight: 600; color: var(--hte-accent-dark); cursor: pointer; border-radius: 6px;
+}
+.hte-save-row:hover { background: var(--hte-accent-soft); }
+
+/* ---------- View tabs ---------- */
+.hte-viewtabs { display: flex; gap: 2px; padding: 8px 10px 0; background: var(--hte-surface); }
+.hte-vtab {
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--hte-ink-soft);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+}
+.hte-vtab.hte-active { color: var(--hte-ink); background: var(--hte-paper); border-color: var(--hte-border); }
+
+/* ---------- Panes ---------- */
+.hte-panes { position: relative; background: var(--hte-paper); flex: 1; min-height: 0; overflow: hidden; }
+.hte-pane {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.hte-pane.hte-active { display: block; }
+
+.hte-editor {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  padding: 24px 30px;
+  font-size: 16px;
+  line-height: 1.7;
+  outline: none;
+  background: var(--hte-surface);
+}
+.hte-editor h1 { font-size: 26px; margin: .3em 0 .2em; }
+.hte-editor h2 { font-size: 21px; margin: .5em 0 .2em; }
+.hte-editor h3 { font-size: 18px; margin: .5em 0 .2em; }
+.hte-editor blockquote { margin: 12px 0; padding: 4px 16px; border-left: 3px solid var(--hte-accent); color: var(--hte-ink-soft); font-style: italic; }
+.hte-editor img { max-width: 100%; border-radius: 4px; }
+.hte-editor table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+.hte-editor table td, .hte-editor table th { border: 1px solid var(--hte-border); padding: 6px 10px; font-size: 14px; }
+.hte-editor a { color: var(--hte-accent-dark); }
+.hte-editor:empty:before { content: attr(data-placeholder); color: var(--hte-ink-soft); font-style: italic; }
+
+.hte-code {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  margin: 0;
+  padding: 18px;
+  font-family: Consolas, "Cascadia Code", "JetBrains Mono", monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
+  background: var(--hte-code-bg);
+  color: var(--hte-code-fg);
+  overflow: auto;
+  white-space: pre;
+}
+
+.hte-preview-frame { display: block; box-sizing: border-box; width: 100%; height: 100%; min-height: 0; border: none; background: #fff; }
+
+.hte-statusbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 14px;
+  border-top: 1px solid var(--hte-border);
+  font-size: 11px;
+  color: var(--hte-ink-soft);
+  background: var(--hte-surface);
+}
+
+@media (max-width: 640px) {
+  .hte-editor { padding: 16px; }
+  .hte-panel { right: auto; left: 0; width: 240px; }
+}
+
+/* ---------- Custom modal (replaces window.prompt / alert) ---------- */
+.hte-modal-root { position: absolute; inset: 0; pointer-events: none; z-index: 200; }
+.hte-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 22, 26, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+.hte-modal {
+  background: var(--hte-surface);
+  border: 1px solid var(--hte-border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  width: 320px;
+  max-width: calc(100% - 32px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+}
+.hte-modal h3 { margin: 0 0 4px; font-size: 15px; color: var(--hte-ink); }
+.hte-modal label { display: block; font-size: 12px; color: var(--hte-ink-soft); margin: 12px 0 4px; }
+.hte-modal input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--hte-border);
+  border-radius: 6px;
+  font-size: 13.5px;
+  background: var(--hte-paper);
+  color: var(--hte-ink);
+  outline: none;
+}
+.hte-modal input:focus { border-color: var(--hte-accent); }
+.hte-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.hte-modal-btn {
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--hte-border);
+  background: var(--hte-surface);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hte-ink);
+}
+.hte-modal-btn:hover { border-color: var(--hte-accent); }
+.hte-modal-btn.hte-primary { background: var(--hte-accent); border-color: var(--hte-accent); color: #fff; }
+.hte-modal-btn.hte-primary:hover { background: var(--hte-accent-dark); border-color: var(--hte-accent-dark); }
+
+/* ---------- Toast (replaces window.alert for confirmations) ---------- */
+.hte-toast {
+  position: absolute;
+  bottom: 46px;
+  left: 50%;
+  transform: translate(-50%, 8px);
+  background: var(--hte-ink);
+  color: var(--hte-surface);
+  padding: 9px 16px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+}
+.hte-root[data-hte-theme="dark"] .hte-toast { background: var(--hte-accent); color: #0E1512; }
+.hte-toast.hte-show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Drag-to-resize handle ---------- */
+.hte-resize-handle {
+  height: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hte-surface);
+  border-top: 1px solid var(--hte-border);
+  cursor: ns-resize;
+  touch-action: none;
+}
+.hte-resize-handle .hte-grip {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--hte-border);
+  transition: background 0.12s ease;
+}
+.hte-resize-handle:hover .hte-grip { background: var(--hte-accent); }

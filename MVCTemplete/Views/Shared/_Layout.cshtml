@@ -81,7 +81,7 @@
 
         $(document).ajaxError(function (event, xhr, settings) {
 
-            if (xhr.status !== 401)
+            if (xhr.status != 401)
                 return;
 
             if (settings.url.indexOf("/api/admin/refresh") >= 0)
@@ -90,9 +90,31 @@
             if (isRefreshing)
                 return;
 
-            isRefreshing = true;
+            $.ajax({
+                url: "/api/admin/remember-me",
+                type: "GET",
+                success: function (r) {
 
-            refreshAccessToken();
+                    if (r.data === true) {
+
+                        isRefreshing = true;
+                        refreshAccessToken();
+
+                    }
+                    else {
+
+                        redirectToLogin();
+
+                    }
+
+                },
+                error: function () {
+
+                    redirectToLogin();
+
+                }
+            });
+
         });
         $(document).ready(function () {
 
@@ -117,8 +139,26 @@
                 },
                 error: function (xhr) {
 
-                    if (xhr.status !== 401)
+                    if (xhr.status != 401) {
                         redirectToLogin();
+                        return;
+                    }
+
+                    $.ajax({
+                        url: "/api/admin/remember-me",
+                        type: "GET",
+                        success: function (r) {
+                            if (r.Data === true) {
+                                isRefreshing = true;
+                                refreshAccessToken();
+                            } else {
+                                redirectToLogin();
+                            }
+                        },
+                        error: function () {
+                            redirectToLogin();
+                        }
+                    });
 
                 }
             });
@@ -147,7 +187,14 @@
 
         function redirectToLogin() {
             localStorage.clear();
-            window.location.href = "/Home/Login";
+            $.ajax({
+                url: "/api/admin/logout",
+                type: "POST",
+                contentType: "application/json",
+                complete: function () {
+                    window.location.href = "/Home/Login";
+                }
+            });
         }
 
         function logout() {

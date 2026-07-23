@@ -6,6 +6,7 @@ public interface IAuthService
     string GetAccessToken();
     string GetRefreshToken();
     string GenerateOTP();
+    bool IsRememberMe();
     ClaimsIdentity GetCurrentIdentity();
     int GetCurrentUserId();
     string GetCurrentUserName();
@@ -15,4 +16,5 @@ public interface IAuthService
     void ClearCookies();
     void SetAccessTokenCookie(string accessToken);
     void SetRefreshTokenCookie(string refreshToken);
+    void SetRememberMeCookie(bool rememberMe);
 }

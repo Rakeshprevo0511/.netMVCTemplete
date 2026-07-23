@@ -101,8 +101,26 @@ public class AuthService : IAuthService
             Secure = true,
             Path = "/"
         });
-    }
 
+        HttpContext.Current.Response.Cookies.Add(new HttpCookie("RememberMe")
+        {
+            Expires = DateTime.UtcNow.AddDays(-1),
+            HttpOnly = true,
+            Secure = true,
+            Path = "/"
+        });
+    }
+    public bool IsRememberMe()
+    {
+        HttpCookie cookie = HttpContext.Current.Request.Cookies["RememberMe"];
+
+        if (cookie == null)
+            return false;
+
+        bool remember;
+
+        return bool.TryParse(cookie.Value, out remember) && remember;
+    }
     public void SetAccessTokenCookie(string accessToken)
     {
         var cookie = new HttpCookie("AccessToken", accessToken)
@@ -118,7 +136,18 @@ public class AuthService : IAuthService
 
         HttpContext.Current.Response.Cookies.Add(cookie);
     }
+    public void SetRememberMeCookie(bool rememberMe)
+    {
+        var cookie = new HttpCookie("RememberMe", rememberMe.ToString().ToLower())
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddDays(30)
+        };
 
+        HttpContext.Current.Response.Cookies.Add(cookie);
+    }
     public void SetRefreshTokenCookie(string refreshToken)
     {
         var cookie = new HttpCookie("RefreshToken", refreshToken)

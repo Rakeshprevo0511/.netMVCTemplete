@@ -49,6 +49,8 @@ public class AdminService : IAdminService
         _authService.SetAccessTokenCookie(accessToken);
         _authService.SetRefreshTokenCookie(refreshToken);
 
+        _authService.SetRememberMeCookie(request.RememberMe);
+
         return ApiResponse<object>.SuccessResponse(null, "Login Successful");
     }
 

@@ -18,8 +18,7 @@ public class AdminController : BaseApiController
     public IHttpActionResult Login([FromBody] LoginRequest request)
     {
         var result = _adminService.Login(request);
-        if (result != null)
-        {
+        if (result != null){
             var otp = _authService.GenerateOTP();
         }
         return Content((HttpStatusCode)result.StatusCode, result);
@@ -49,6 +48,15 @@ public class AdminController : BaseApiController
         return Ok(ApiResponse<object>.SuccessResponse(null, "Logged out successfully."));
     }
 
+    [AllowAnonymous]
+    [HttpGet]
+    [Route("remember-me")]
+    public IHttpActionResult RememberMe()
+    {
+        bool remember = _authService.IsRememberMe();
+
+        return Ok(ApiResponse<bool>.SuccessResponse(remember));
+    }
     [AllowAnonymous]
     [HttpPost]
     [Route("validate-token")]

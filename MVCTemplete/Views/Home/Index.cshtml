@@ -209,6 +209,7 @@
         // refreshing the session and retrying this same call once, with
         // no page reload and no manual per-page refresh logic.
         function loadRecentUsers() {
+            tableHelper.skeleton("#usersTableBody tbody", 7, 8);
 
             ajaxHelper.get("/api/admin/users", { pageNumber: 1, pageSize: 5 })
                 .then(function (res) {

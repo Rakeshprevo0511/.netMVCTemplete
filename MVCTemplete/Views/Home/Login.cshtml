@@ -126,6 +126,12 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
+    @* Same centralized helper used everywhere else in the app. noRedirect:true
+       is used below because we're already ON the login page - if the session
+       can't be silently restored we just want to show the form, not bounce
+       through /Home/Login again. The ?v= query string is a manual cache-buster. *@
+    <script src="~/Scripts/app/ajaxHelper.js?v=3"></script>
+
     <script>
         $(function () {
             checkLogin();
@@ -142,47 +148,17 @@
         });
 
         function checkLogin() {
-            $.ajax({
-                url: "/api/admin/validate-token",
-                type: "POST",
-                success: function () {
+            // ajaxHelper already runs the full remember-me -> refresh -> retry
+            // sequence internally on a 401 (single-flight, race-safe). If that
+            // succeeds, this resolves and we go straight to the app; if not,
+            // we just show the login form.
+            ajaxHelper.request({ url: "/api/admin/validate-token", type: "POST", noRedirect: true })
+                .then(function () {
                     window.location.href = "/Home/Index";
-                },
-                error: function (xhr) {
-                    if (xhr.status != 401) {
-                        $("#loginCard").show();
-                        return;
-                    }
-
-                    $.ajax({
-                        url: "/api/admin/remember-me",
-                        type: "GET",
-                        success: function (r) {
-                            if (r.Data === true) {
-                                refreshToken();
-                            } else {
-                                $("#loginCard").show();
-                            }
-                        },
-                        error: function () {
-                            $("#loginCard").show();
-                        }
-                    });
-                }
-            });
-        }
-
-        function refreshToken() {
-            $.ajax({
-                url: "/api/admin/refresh",
-                type: "POST",
-                success: function () {
-                    window.location.href = "/Home/Index";
-                },
-                error: function () {
+                })
+                .catch(function () {
                     $("#loginCard").show();
-                }
-            });
+                });
         }
 
         function login() {
@@ -197,29 +173,35 @@
 
             $("#message").text("");
 
-            $.ajax({
-                url: "/api/admin/login",
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify({
-                    username: username,
-                    password: password,
-                    rememberMe: rememberMe
-                }),
-                success: function () {
+            ajaxHelper.post("/api/admin/login", {
+                username: username,
+                password: password,
+                rememberMe: rememberMe
+            }, { noRedirect: true, button: "#btnLogin" })
+                .then(function () {
+
                     showToast("Login Successful", "success");
+
+                    $("#btnLogin")
+                        .prop("disabled", true)
+                        .html('<span class="spinner-border spinner-border-sm me-2"></span>Redirecting...');
+
+                    $("#txtUsername").prop("disabled", true);
+                    $("#txtPassword").prop("disabled", true);
+                    $("#chkRememberMe").prop("disabled", true);
+
                     setTimeout(function () {
                         window.location.href = "/Home/Index";
                     }, 1500);
-                },
-                error: function (xhr) {
+
+                })
+                .catch(function (xhr) {
                     if (xhr.status === 401) {
                         $("#message").text("Invalid Username or Password");
                     } else {
                         $("#message").text("Something went wrong.");
                     }
-                }
-            });
+                });
         }
 
         function showToast(message, type) {

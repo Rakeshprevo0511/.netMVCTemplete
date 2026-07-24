@@ -141,9 +141,16 @@ public class AuthService : IAuthService
         var cookie = new HttpCookie("RememberMe", rememberMe.ToString().ToLower())
         {
             HttpOnly = true,
-            Secure = true,
+            // Match AccessToken/RefreshToken: Secure must follow the actual request
+            // scheme. Hardcoding Secure = true here meant this cookie was silently
+            // dropped by the browser on plain HTTP (e.g. local dev over http://),
+            // so IsRememberMe() always came back false and every 401 skipped the
+            // silent refresh and went straight to logout, even for a session that
+            // really was "remember me".
+            Secure = HttpContext.Current.Request.Url.Scheme == Uri.UriSchemeHttps,
             SameSite = SameSiteMode.Strict,
-            Expires = DateTime.UtcNow.AddDays(30)
+            Expires = DateTime.UtcNow.AddDays(30),
+            Path = "/"
         };
 
         HttpContext.Current.Response.Cookies.Add(cookie);

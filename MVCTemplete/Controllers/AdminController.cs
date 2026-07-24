@@ -100,6 +100,13 @@ public class AdminController : BaseApiController
         var result = await _adminService.GetContent(id);
         return Ok(result);
     }
+    [HttpDelete]
+    [Route("delete-content/{id}")]
+    public async Task<IHttpActionResult> DeleteContent(int  id)
+    {
+        var result = await _adminService.ContentDelete(id);
+        return Ok(result);
+    }
 
     [HttpGet]
     [Route("get-all-content")]

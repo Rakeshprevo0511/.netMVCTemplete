@@ -53,10 +53,8 @@
         element: "#editor"
     });
 
-    $(document).ready(function () {
-
+    $(function () {
         loadAllContent();
-
     });
 
     //================ SAVE ==================
@@ -65,43 +63,36 @@
 
         var model = {
             Id: ContentId,
-            Title: $("#txtTitle").val().trim(),
+            Title: $("#txtTitle").val(),
             HtmlContent: editor.getHTML()
         };
-        const html = editor.getHTML();
 
-        const maxSize = 1024 * 1024; // 1 MB
+        const maxSize = 1024 * 1024;
+        const size = new Blob([model.HtmlContent]).size;
 
-        const size = new Blob([html]).size;
-
-        
-        if (model.Title == "") {
-            showToast("Please enter title.","warning");
+        if (!validationHelper.required(model.Title)) {
+            showToast("Please enter title.", "warning");
+            $("#txtTitle").focus();
             return;
         }
 
-        if (model.HtmlContent.trim() == "") {
-            showToast("Please enter content.", "error");
+        if (!validationHelper.required(model.HtmlContent)) {
+            showToast("Please enter content.", "warning");
             return;
         }
+
         if (size > maxSize) {
             showToast("HTML content cannot exceed 1 MB.", "warning");
             return;
         }
-        $.ajax({
 
-            url: "/api/admin/set-content",
-            type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify(model),
-
-            beforeSend: function () {
-                $("#btnSave").prop("disabled", true).text("Saving...");
-            },
-
-            success: function (res) {
-
-                $("#btnSave").prop("disabled", false).text("Save Content");
+        ajaxHelper.post(
+            "/api/admin/set-content",
+            model,
+            {
+                button: "#btnSave"
+            })
+            .then(function (res) {
 
                 if (res.Success) {
 
@@ -110,91 +101,70 @@
                     clearForm();
 
                     loadAllContent();
-
                 }
                 else {
 
-                    showToast(res.Message,"error");
-
+                    showToast(res.Message, "error");
                 }
 
-            },
+            })
+            .catch(function (xhr) {
 
-            error: function (xhr) {
+                var msg = "Something went wrong.";
 
-                $("#btnSave").prop("disabled", false).text("Save Content");
+                if (xhr.responseJSON &&
+                    xhr.responseJSON.Errors &&
+                    xhr.responseJSON.Errors.length) {
 
-                showToast(xhr.responseText, "error");
+                    msg = xhr.responseJSON.Errors[0];
+                }
 
-            }
+                showToast(msg, "error");
 
-        });
+            });
 
     });
 
     //================ LOAD ALL ==================
 
     function loadAllContent() {
+        tableHelper.skeleton("#tblContent tbody", 4, 5);
 
-        $.ajax({
+        ajaxHelper.get("/api/admin/get-all-content")
+            .then(function (res) {
 
-            url: "/api/admin/get-all-content",
-            type: "GET",
+                tableHelper.bind({
 
-            success: function (res) {
+                    table: "#tblContent tbody",
 
-                console.log(res);
+                    columns: 4,
 
-                var tbody = $("#tblContent tbody");
+                    data: res.Success ? res.Data : [],
 
-                tbody.empty();
+                    emptyMessage: "No Record Found",
 
-                if (!res.Success) {
+                    row: function (item,row) {
 
-                    tbody.append('<tr><td colspan="4" class="text-center">No Record Found</td></tr>');
-                    return;
-
-                }
-
-                if (!res.Data || res.Data.length == 0) {
-
-                    tbody.append('<tr><td colspan="4" class="text-center">No Record Found</td></tr>');
-                    return;
-
-                }
-
-                $.each(res.Data, function (i, item) {
-
-                    var date = "";
-
-                    if (item.CreatedDate != null) {
-
-                        date = item.CreatedDate.substring(0, 10);
+                        return $("<tr>")
+                            .append($("<td>").text(tableHelper.serialNo(1, 4, row)))
+                            .append($("<td>").text(item.Title))
+                            .append($("<td>").text(tableHelper.date(item.CreatedDate)))
+                            .append(
+                                $("<td>")
+                                    .append(tableHelper.actions.edit(item.Id))
+                                    .append(tableHelper.actions.delete(item.Id))
+                            );
 
                     }
 
-                    tbody.append(
-                        '<tr>' +
-                        '<td>' + item.Id + '</td>' +
-                        '<td>' + item.Title + '</td>' +
-                        '<td>' + date + '</td>' +
-                        '<td>' +
-                        '<button class="btn btn-primary btn-sm btnEdit" data-id="' + item.Id + '">Edit</button>' +
-                        '</td>' +
-                        '</tr>'
-                    );
-
                 });
 
-            },
+            })
+            .catch(function () {
 
-            error: function (xhr) {
+                tableHelper.error("#tblContent tbody", 4, "Unable to load records.");
 
-                console.log(xhr);
-
-            }
-
-        });
+            });
 
     }
 
@@ -204,25 +174,19 @@
 
         var id = $(this).data("id");
 
-        $.ajax({
-
-            url: "/api/admin/get-content/" + id,
-            type: "GET",
-
-            success: function (res) {
+        ajaxHelper.get("/api/admin/get-content/" + id)
+            .then(function (res) {
 
                 if (!res.Success) {
 
                     showToast(res.Message, "error");
                     return;
-
                 }
 
-                if (!res.Data || res.Data.length == 0) {
+                if (!res.Data || res.Data.length === 0) {
 
                     showToast("Record not found.", "error");
                     return;
-
                 }
 
                 var item = res.Data[0];
@@ -238,12 +202,93 @@
                     behavior: "smooth"
                 });
 
+            })
+            .catch(function () {
+
+                showToast("Unable to load record.", "error");
+
+            });
+
+    });
+    $(document).on("click", ".btnDelete", function () {
+
+        var id = $(this).data("id");
+
+        modalHelper.confirm({
+
+            title: "Delete Content",
+
+            heading: "Delete Confirmation",
+
+            subHeading: "This action cannot be undone.",
+
+            message: "Are you sure you want to permanently delete this content?",
+
+            icon: "bi-trash-fill text-danger",
+
+            buttonText: "Delete",
+
+            buttonClass: "btn-danger",
+
+            confirmIcon: "bi-trash",
+
+            cancelText: "Cancel",
+
+            cancelClass: "btn-secondary",
+
+            cancelIcon: "bi-x-circle",
+
+            showLoader: true,
+
+            loaderText: "Deleting...",
+
+            closeOnConfirm: false,
+
+            onConfirm: function () {
+
+                deleteContent(id);
+
             }
 
         });
 
     });
+    function deleteContent(id) {
 
+        ajaxHelper.delete("/api/admin/delete-content/" + id)
+
+            .then(function (response) {
+
+                if (response.Success) {
+
+                    modalHelper.hide("#confirmModal");
+
+                    showToast(response.Message || "Content deleted successfully.", "success");
+
+                    loadAllContent(); // Reload your table
+
+                }
+                else {
+
+                    modalHelper.resetConfirmButton();
+
+                    showToast(response.Message || "Unable to delete content.", "error");
+
+                }
+
+            })
+
+            .catch(function (error) {
+
+                console.error(error);
+
+                modalHelper.resetConfirmButton();
+
+                showToast("Something went wrong while deleting the content.", "error");
+
+            });
+
+    }
     //================ CLEAR ==================
 
     $("#btnClear").click(function () {

@@ -168,54 +168,22 @@
 
                     <table class="table table-hover align-middle">
 
-                        <thead class="table-light">
+                        <thead class="table-light" id="usersTableHead">
                             <tr>
+                                <th>#</th>
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Status</th>
                                 <th>Created</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
 
-                        <tbody>
-
+                        <tbody id="usersTableBody">
                             <tr>
-                                <td>John Smith</td>
-                                <td>john@example.com</td>
-                                <td>Admin</td>
-                                <td>
-                                    <span class="badge bg-success">
-                                        Active
-                                    </span>
-                                </td>
-                                <td>20 Jul 2026</td>
+                                <td colspan="5" class="text-center text-muted">Loading users&hellip;</td>
                             </tr>
-
-                            <tr>
-                                <td>Rakesh</td>
-                                <td>rakesh@example.com</td>
-                                <td>User</td>
-                                <td>
-                                    <span class="badge bg-warning text-dark">
-                                        Pending
-                                    </span>
-                                </td>
-                                <td>18 Jul 2026</td>
-                            </tr>
-
-                            <tr>
-                                <td>David</td>
-                                <td>david@example.com</td>
-                                <td>Manager</td>
-                                <td>
-                                    <span class="badge bg-danger">
-                                        Inactive
-                                    </span>
-                                </td>
-                                <td>15 Jul 2026</td>
-                            </tr>
-
                         </tbody>
 
                     </table>
@@ -228,3 +196,127 @@
 
     </div>
 </main>
+
+@section scripts {
+    <script>
+        $(function () {
+            loadRecentUsers();
+        });
+
+        // Every protected endpoint on this page should be called through
+        // ajaxHelper (see Scripts/app/ajaxHelper.js) instead of $.ajax
+        // directly: it transparently handles an expired access token by
+        // refreshing the session and retrying this same call once, with
+        // no page reload and no manual per-page refresh logic.
+        function loadRecentUsers() {
+
+            ajaxHelper.get("/api/admin/users", { pageNumber: 1, pageSize: 5 })
+                .then(function (res) {
+
+                    tableHelper.bind({
+
+                        table: "#usersTableBody",
+
+                        columns: 6,
+
+                        data: res.Data,
+
+                        emptyMessage: "No users found.",
+
+                        row: function (row, index) {
+
+                            return $("<tr>")
+                                .append($("<td>").text(tableHelper.serialNo(1, 5, index)))
+                                .append($("<td>").text([row.FirstName, row.LastName].filter(Boolean).join(" ") || row.Name || "-"))
+                                .append(
+                                    $("<td>")
+                                        .text(row.Email + " ")
+                                        .append(tableHelper.copy(row.Email))
+                                )
+                                .append($("<td>").text(row.RoleName || "-"))
+                                .append($("<td>").append(tableHelper.toggle(row.IsActive, row.Id, "statusToggle")))
+                                .append($("<td>").text(row.CreatedDate || "-"))
+                                .append(
+                                    $("<td>")
+                                        .addClass("text-center")
+                                        .append(tableHelper.actions.view(row.Id))
+                                        .append(tableHelper.actions.edit(row.Id))
+                                        .append(tableHelper.actions.delete(row.Id))
+                                );
+
+                        }
+
+                    });
+
+                })
+                .catch(function () {
+
+                    tableHelper.error("#usersTableBody", 6, "Could not load users.");
+
+                });
+
+        }
+        $(document).on("click", ".btnDelete", function () {
+
+            var id = $(this).data("id");
+
+            modalHelper.confirm({
+
+                title: "Delete User",
+
+                heading: "Delete Confirmation",
+
+                subHeading: "This action cannot be undone.",
+
+                message: "Are you sure you want to delete this user?",
+
+                icon: "bi-trash-fill text-danger",
+
+                buttonText: "Delete",
+
+                buttonClass: "btn-danger",
+
+                confirmIcon: "bi-trash",
+
+                showLoader: true,
+
+                loaderText: "Deleting...",
+
+                onConfirm: function () {
+
+                    deleteUser(id);
+
+                }
+
+            });
+
+        });
+        function deleteUser(id) {
+
+            ajaxHelper.delete("/api/users/" + id)
+                .then(function (response) {
+
+                    if (response.Success) {
+
+                        showToast(response.Message || "User deleted successfully.", "success");
+
+                        loadUsers(); // Refresh grid
+
+                    } else {
+
+                        showToast(response.Message || "Unable to delete user.", "error");
+
+                    }
+
+                })
+                .catch(function (error) {
+
+                    console.error(error);
+
+                    showToast("Something went wrong while deleting the user.", "error");
+
+                });
+
+        }
+    </script>
+}

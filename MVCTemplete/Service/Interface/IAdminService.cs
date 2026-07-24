@@ -16,4 +16,5 @@ public interface IAdminService
     Task<ApiResponse<object>> GetContent(int id);
 
     Task<ApiResponse<object>> GetAllContent();
+    Task<ApiResponse<object>> ContentDelete(int id);
 }

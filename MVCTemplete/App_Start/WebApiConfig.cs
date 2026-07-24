@@ -11,12 +11,13 @@ namespace MVCTemplete
 
             // Web API routes
             config.MapHttpAttributeRoutes();
-
+            config.Filters.Add(new GlobalExceptionFilter());
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",
                 routeTemplate: "api/{controller}/{id}",
                 defaults: new { id = RouteParameter.Optional }
             );
+
         }
     }
 }

@@ -213,6 +213,7 @@
     <Compile Include="Helpers\ApiResponse.cs" />
     <Compile Include="Helpers\Configuration.cs" />
     <Compile Include="Helpers\FileHelper.cs" />
+    <Compile Include="Helpers\GlobalExceptionFilter.cs" />
     <Compile Include="Helpers\MailHelper.cs" />
     <Compile Include="Models\AppDbContext.Context.cs">
       <AutoGen>True</AutoGen>
@@ -279,6 +280,10 @@
       <DependentUpon>AppDbContext.edmx</DependentUpon>
       <LastGenOutput>AppDbContext.cs</LastGenOutput>
     </Content>
+    <Content Include="Scripts\app\ajaxHelper.js" />
+    <Content Include="Scripts\app\modalHelper.js" />
+    <Content Include="Scripts\app\tableHelper.js" />
+    <Content Include="Scripts\app\validationHelper.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />

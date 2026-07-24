@@ -248,5 +248,20 @@ public class AdminService : IAdminService
             return ApiResponse<object>.FailureResponse(ex.Message);
         }
     }
+    public async Task<ApiResponse<object>> ContentDelete(int id)
+    {
+        try
+        {
+            DataTable dt = await _dbHelper.GetDataTableAsync(
+                "USP_DeleteHtmlContent",
+                new SqlParameter("@Id", id)
+            );
+            return ApiResponse<object>.SuccessResponse(dt, "Content deleted successfully.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<object>.FailureResponse(ex.Message);
+        }
+    }
 
 }

@@ -76,46 +76,17 @@
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    @* Centralized 401 -> remember-me -> refresh -> retry logic (+ global loader,
+        + button loading state). Every API call on every page should go through
+        ajaxHelper (see Scripts/app/ajaxHelper.js) instead of calling $.ajax
+        directly, so this behavior stays consistent. The ?v= query string is a
+        manual cache-buster — bump it any time this file changes. *@
+    <script src="~/Scripts/app/ajaxHelper.js?v=3"></script>
+    <script src="~/Scripts/app/validationHelper.js"></script>
+    <script src="~/Scripts/app/modalHelper.js"></script>
+    <script src="~/Scripts/app/tableHelper.js"></script>
     <script>
-        var isRefreshing = false;
-
-        $(document).ajaxError(function (event, xhr, settings) {
-
-            if (xhr.status != 401)
-                return;
-
-            if (settings.url.indexOf("/api/admin/refresh") >= 0)
-                return;
-
-            if (isRefreshing)
-                return;
-
-            $.ajax({
-                url: "/api/admin/remember-me",
-                type: "GET",
-                success: function (r) {
-
-                    if (r.data === true) {
-
-                        isRefreshing = true;
-                        refreshAccessToken();
-
-                    }
-                    else {
-
-                        redirectToLogin();
-
-                    }
-
-                },
-                error: function () {
-
-                    redirectToLogin();
-
-                }
-            });
-
-        });
         $(document).ready(function () {
 
             checkAuthentication();
@@ -129,84 +100,91 @@
 
         function checkAuthentication() {
 
-            $.ajax({
-                url: "/api/admin/validate-token",
-                type: "POST",
-                success: function () {
-
+            // ajaxHelper.request already handles the full 401 -> remember-me ->
+            // refresh -> retry sequence internally (single-flight, no page
+            // reload). We only need to react to the final outcome here.
+            ajaxHelper.request({ url: "/api/admin/validate-token", type: "POST", silent: true })
+                .then(function () {
                     showApp();
+                })
+                .catch(function () {
+                    // ajaxHelper already triggered redirectToLogin() for the
+                    // unrecoverable case; this is just a safety net.
+                    ajaxHelper.redirectToLogin();
+                });
 
-                },
-                error: function (xhr) {
-
-                    if (xhr.status != 401) {
-                        redirectToLogin();
-                        return;
-                    }
-
-                    $.ajax({
-                        url: "/api/admin/remember-me",
-                        type: "GET",
-                        success: function (r) {
-                            if (r.Data === true) {
-                                isRefreshing = true;
-                                refreshAccessToken();
-                            } else {
-                                redirectToLogin();
-                            }
-                        },
-                        error: function () {
-                            redirectToLogin();
-                        }
-                    });
-
-                }
-            });
-
-        }
-
-        function refreshAccessToken() {
-
-            $.ajax({
-                url: "/api/admin/refresh",
-                type: "POST",
-                success: function () {
-
-                    isRefreshing = false;
-
-                    location.reload();   // simplest solution
-                },
-                error: function () {
-
-                    isRefreshing = false;
-
-                    redirectToLogin();
-                }
-            });
-        }
-
-        function redirectToLogin() {
-            localStorage.clear();
-            $.ajax({
-                url: "/api/admin/logout",
-                type: "POST",
-                contentType: "application/json",
-                complete: function () {
-                    window.location.href = "/Home/Login";
-                }
-            });
         }
 
         function logout() {
-            $.ajax({
-                url: "/api/admin/logout",
-                type: "POST",
-                contentType: "application/json",
-                complete: function () {
-                    window.location.href = "/Home/Login";
+
+            modalHelper.confirm({
+
+                title: "Logout",
+
+                heading: "Sign Out",
+
+                subHeading: "Your current session will be terminated.",
+
+                message: "Are you sure you want to logout? Any unsaved changes may be lost.",
+
+                icon: "bi-box-arrow-right text-warning",
+
+                buttonText: "Logout",
+
+                buttonClass: "btn-warning",
+
+                confirmIcon: "bi-box-arrow-right",
+
+                cancelText: "Stay Logged In",
+
+                cancelClass: "btn-outline-secondary",
+
+                cancelIcon: "bi-x-circle",
+
+                showLoader: true,
+
+                loaderText: "Signing out...",
+
+                closeButton: true,
+
+                backdrop: "static",
+
+                keyboard: false,
+
+                closeOnConfirm: true,
+
+                closeOnCancel: true,
+
+                beforeShow: function () {
+                    console.log("Logout confirmation opened.");
+                },
+
+                afterShow: function () {
+                    $("#btnConfirmAction").focus();
+                },
+
+                onConfirm: function () {
+
+                    ajaxHelper.redirectToLogin();
+
+                },
+
+                onCancel: function () {
+
+                    showToast("Logout cancelled.", "info");
+
+                },
+
+                afterHide: function () {
+
+                    console.log("Logout dialog closed.");
+
                 }
+
             });
+
         }
+
         function showToast(message, type = "success") {
 
             var toast = $("#appToast");
@@ -267,6 +245,72 @@
 
         </div>
 
+    </div>
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" id="confirmModalDialog">
+            <div class="modal-content shadow">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title" id="confirmTitle">
+                        Confirmation
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            id="confirmCloseButton"
+                            data-bs-dismiss="modal"
+                            aria-label="Close">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="d-flex align-items-start">
+
+                        <div class="me-3">
+                            <i id="confirmIcon"
+                               class="bi bi-question-circle-fill fs-1 text-warning">
+                            </i>
+                        </div>
+
+                        <div class="flex-grow-1">
+
+                            <h6 id="confirmHeading" class="mb-1"></h6>
+
+                            <small id="confirmSubHeading"
+                                   class="text-muted d-block mb-2">
+                            </small>
+
+                            <div id="confirmMessage" class="text-muted">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            id="btnCancelAction"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+
+                    <button type="button"
+                            id="btnConfirmAction"
+                            class="btn btn-primary">
+                        Confirm
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
     </div>
 </body>
 </html>

@@ -77,11 +77,23 @@ public class AdminController : BaseApiController
 
     [HttpGet]
     [Route("users")]
-    public async Task<IHttpActionResult> GetUsersservices(int pageNumber = 1, int pageSize = 10, string search = "")
+    public async Task<IHttpActionResult> GetUsersservices(
+    int pageNumber = 1,
+    int pageSize = 10,
+    string search = "")
     {
-        
-        var users = await _userService.GetUsersAsync(pageNumber, pageSize, search);
-        return Ok(ApiResponse<object>.SuccessResponse(users, "Users fetched successfully."));
+        var result = await _userService.GetUsersAsync(pageNumber, pageSize, search);
+
+        return Ok(ApiResponse<object>.SuccessResponse(
+            result.Items,
+            new PaginationDto
+            {
+                CurrentPage = pageNumber,
+                PageSize = pageSize,
+                TotalRecords = result.TotalRecords
+            },
+            "Users fetched successfully."
+        ));
     }
 
     [HttpPost]

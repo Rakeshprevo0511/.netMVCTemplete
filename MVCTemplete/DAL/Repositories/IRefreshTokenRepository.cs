@@ -33,5 +33,9 @@ public interface IRefreshTokenRepository
     /// <summary>Revokes the row matching this raw token, if any and if still active.</summary>
     bool RevokeByToken(string rawToken);
 
+    void DeleteExpiredTokens();
+
+    void DeleteExpiredTokensForUser(int userId);
+
     void SaveChanges();
 }

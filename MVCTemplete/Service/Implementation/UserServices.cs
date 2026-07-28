@@ -22,19 +22,38 @@ namespace MVCTemplete.Service.Implementation
             _dbContext = new JwtAuthAppDbEntities();
         }
 
-        public async Task<DataTable> GetUsersAsync(int pageNumber, int pageSize, string search)
+        public async Task<PagedResult<UserResponseDto>> GetUsersAsync(int pageNumber, int pageSize, string search)
         {
-            return await _dbHelper.GetDataTableAsync(
+            DataTable dt = await _dbHelper.GetDataTableAsync(
                 "USP_GetUsers",
                 new SqlParameter("@PageNumber", pageNumber),
                 new SqlParameter("@PageSize", pageSize),
                 new SqlParameter("@Search",
-                    string.IsNullOrWhiteSpace(search)
-                        ? (object)DBNull.Value
-                        : search)
+                    string.IsNullOrWhiteSpace(search) ? (object)DBNull.Value : search)
             );
-        }
 
+            var users = dt.AsEnumerable().Select(row => new UserResponseDto
+            {
+                UserID = row.Field<int>("Id"),
+                Name = row.Field<string>("Name"),
+                UserName = row.Field<string>("UserName"),
+                Email = row.Field<string>("Email"),
+                MobileNo = row.Field<string>("MobileNo"),
+                Role = row.Field<string>("RoleName"),
+                IsActive = row.Field<bool>("IsActive"),
+                CreatedDate = Configuration.ToDateTime(row.Field<DateTime>("CreatedAt"))
+            }).ToList();
+
+            int totalRecords = dt.Rows.Count == 0
+                ? 0
+                : Convert.ToInt32(dt.Rows[0]["TotalRecords"]);
+
+            return new PagedResult<UserResponseDto>
+            {
+                Items = users,
+                TotalRecords = totalRecords
+            };
+        }
         public async Task<UserDto> GetUserByIdAsync(int userId)
         {
             DataTable dt = await _dbHelper.GetDataTableAsync(

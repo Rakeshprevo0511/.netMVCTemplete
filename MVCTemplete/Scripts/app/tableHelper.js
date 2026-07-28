@@ -60,7 +60,98 @@
         });
 
     };
+    tableHelper.pagination = function (options) {
 
+        var p = options.pagination || {};
+
+        var currentPage = parseInt(p.CurrentPage || 1);
+        var pageSize = parseInt(p.PageSize || 10);
+        var totalRecords = parseInt(p.TotalRecords || 0);
+        var totalPages = parseInt(p.TotalPages || Math.ceil(totalRecords / pageSize));
+
+        var pagination = $(options.container || "#tablePagination");
+        var info = $(options.infoContainer || "#tableInfo");
+
+        pagination.empty();
+        info.empty();
+
+        if (totalRecords === 0) {
+            info.text("No records found.");
+            return;
+        }
+
+        info.text(
+            "Showing " +
+            (((currentPage - 1) * pageSize) + 1) +
+            " - " +
+            Math.min(currentPage * pageSize, totalRecords) +
+            " of " +
+            totalRecords +
+            " records"
+        );
+
+        if (totalPages <= 1)
+            return;
+
+        // Previous
+        pagination.append(
+            $("<li>")
+                .addClass("page-item " + (currentPage === 1 ? "disabled" : ""))
+                .append(
+                    $("<a>")
+                        .addClass("page-link")
+                        .attr("href", "#")
+                        .text("Previous")
+                        .on("click", function (e) {
+                            e.preventDefault();
+
+                            if (currentPage > 1)
+                                options.onPage(currentPage - 1);
+                        })
+                )
+        );
+
+        // Page Numbers
+        for (var i = 1; i <= totalPages; i++) {
+
+            (function (page) {
+
+                pagination.append(
+                    $("<li>")
+                        .addClass("page-item " + (page === currentPage ? "active" : ""))
+                        .append(
+                            $("<a>")
+                                .addClass("page-link")
+                                .attr("href", "#")
+                                .text(page)
+                                .on("click", function (e) {
+                                    e.preventDefault();
+                                    options.onPage(page);
+                                })
+                        )
+                );
+
+            })(i);
+        }
+
+        // Next
+        pagination.append(
+            $("<li>")
+                .addClass("page-item " + (currentPage === totalPages ? "disabled" : ""))
+                .append(
+                    $("<a>")
+                        .addClass("page-link")
+                        .attr("href", "#")
+                        .text("Next")
+                        .on("click", function (e) {
+                            e.preventDefault();
+
+                            if (currentPage < totalPages)
+                                options.onPage(currentPage + 1);
+                        })
+                )
+        );
+    };
     tableHelper.badge = function (text, type) {
 
         return $("<span>")
@@ -191,6 +282,59 @@
                     .prop("checked", checked)
             );
 
+    };
+    tableHelper.maskEmail = function (email) {
+
+        if (!email)
+            return "";
+
+        var atIndex = email.indexOf("@");
+
+        if (atIndex <= 2)
+            return email;
+
+        return email.substring(0, 2)
+            + "*".repeat(atIndex - 2)
+            + email.substring(atIndex);
+    };
+    tableHelper.maskMobile = function (mobile) {
+
+        if (!mobile || mobile.length < 10)
+            return mobile;
+
+        return mobile.substring(0, 2)
+            + "******"
+            + mobile.substring(mobile.length - 2);
+    };
+    tableHelper.maskAadhaar = function (aadhaar) {
+
+        if (!aadhaar || aadhaar.length !== 12)
+            return aadhaar;
+
+        return "XXXXXXXX" + aadhaar.substring(8);
+    };
+    tableHelper.maskPAN = function (pan) {
+
+        if (!pan || pan.length !== 10)
+            return pan;
+
+        return pan.substring(0, 3)
+            + "*****"
+            + pan.substring(8);
+    };
+    tableHelper.mask = function (value, startVisible, endVisible, maskChar) {
+
+        if (!value)
+            return "";
+
+        maskChar = maskChar || "*";
+
+        if (value.length <= (startVisible + endVisible))
+            return value;
+
+        return value.substring(0, startVisible)
+            + maskChar.repeat(value.length - startVisible - endVisible)
+            + value.substring(value.length - endVisible);
     };
     window.tableHelper = tableHelper;
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MVCTemplete.DAL.DTOs;
+using System;
 using System.Collections.Generic;
 
 namespace MVCTemplete.Models
@@ -13,6 +14,8 @@ namespace MVCTemplete.Models
 
         public T Data { get; set; }
 
+        public PaginationDto Pagination { get; set; }
+
         public List<string> Errors { get; set; }
 
         public DateTime TimeStamp { get; set; } = DateTime.UtcNow;
@@ -26,10 +29,7 @@ namespace MVCTemplete.Models
             Errors = new List<string>();
         }
 
-        public static ApiResponse<T> SuccessResponse(
-            T data,
-            string message = "Success",
-            int statusCode = 200)
+        public static ApiResponse<T> SuccessResponse(T data,string message = "Success",int statusCode = 200)
         {
             return new ApiResponse<T>
             {
@@ -39,11 +39,18 @@ namespace MVCTemplete.Models
                 Data = data
             };
         }
-
-        public static ApiResponse<T> FailureResponse(
-            string message,
-            List<string> errors = null,
-            int statusCode = 400)
+        public static ApiResponse<T> SuccessResponse(T data,PaginationDto pagination,string message = "Success",int statusCode = 200)
+        {
+            return new ApiResponse<T>
+            {
+                Success = true,
+                StatusCode = statusCode,
+                Message = message,
+                Data = data,
+                Pagination = pagination
+            };
+        }
+        public static ApiResponse<T> FailureResponse(string message,List<string> errors = null,int statusCode = 400)
         {
             return new ApiResponse<T>
             {

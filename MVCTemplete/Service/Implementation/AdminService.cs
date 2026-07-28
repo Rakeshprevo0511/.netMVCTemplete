@@ -67,7 +67,7 @@ public class AdminService : IAdminService
         }
 
         var activeToken = _refreshTokenRepository.GetActive(refreshToken);
-
+      
         if (activeToken == null)
         {
             // Not active — either genuinely unknown/expired, or (more interesting) a
@@ -94,6 +94,7 @@ public class AdminService : IAdminService
                 new System.Collections.Generic.List<string> { "Refresh token is invalid or expired." },
                 401);
         }
+        _refreshTokenRepository.DeleteExpiredTokensForUser(activeToken.UserId);
 
         int userId = activeToken.UserId;
 

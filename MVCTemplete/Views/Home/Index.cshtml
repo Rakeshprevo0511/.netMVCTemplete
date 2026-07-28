@@ -158,30 +158,74 @@
 
     <div class="card-body">
 
+        <!-- Search & Actions -->
+        <div class="row mb-3 align-items-center">
+
+            <div class="col-md">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="search"
+                           id="txtSearch"
+                           class="form-control"
+                           placeholder="Search by Name, Email or Mobile">
+                </div>
+            </div>
+
+            <div class="col-auto ms-2">
+                <select id="ddlPageSize" class="form-select">
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+
+            <div class="col-auto ms-2">
+                <button class="btn btn-outline-secondary" id="btnRefresh">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    Refresh
+                </button>
+            </div>
+
+        </div>
+
         <div class="table-responsive">
 
             <table class="table table-hover align-middle">
 
-                <thead class="table-light" id="usersTableHead">
+                <thead class="table-light">
                     <tr>
                         <th>#</th>
                         <th>Name</th>
                         <th>Email</th>
+                        <th>Mobile No</th>
                         <th>Role</th>
                         <th>Status</th>
                         <th>Created</th>
-                        <th>Action</th>
+                        <th width="120">Action</th>
                     </tr>
                 </thead>
 
                 <tbody id="usersTableBody">
                     <tr>
-                        <td colspan="5" class="text-center text-muted">Loading users&hellip;</td>
+                        <td colspan="8" class="text-center text-muted">
+                            Loading users...
+                        </td>
                     </tr>
                 </tbody>
 
             </table>
+            <div class="d-flex justify-content-between align-items-center mt-3">
 
+                <div id="tableInfo" class="text-muted small"></div>
+
+                <nav>
+                    <ul class="pagination pagination mb-0" id="tablePagination"></ul>
+                </nav>
+
+            </div>
         </div>
 
     </div>
@@ -192,25 +236,38 @@
 @section scripts {
     <script>
         $(function () {
-            loadRecentUsers();
+            loadRecentUsers(1);
         });
+        let searchTimer;
 
+        $("#txtSearch").on("keyup", function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function () {
+                loadRecentUsers(1);
+            }, 500);
+        });
+        $("#ddlPageSize").on("change", function () {
+            loadRecentUsers(1);
+        });
         // Every protected endpoint on this page should be called through
         // ajaxHelper (see Scripts/app/ajaxHelper.js) instead of $.ajax
         // directly: it transparently handles an expired access token by
         // refreshing the session and retrying this same call once, with
         // no page reload and no manual per-page refresh logic.
-        function loadRecentUsers() {
-            tableHelper.skeleton("#usersTableBody tbody", 7, 8);
+        function loadRecentUsers(pageNumber) {
 
-            ajaxHelper.get("/api/admin/users", { pageNumber: 1, pageSize: 5 })
+            pageNumber = pageNumber || 1;
+
+            tableHelper.skeleton("#usersTableBody", 8, 5);
+
+            ajaxHelper.get("/api/admin/users", { pageNumber: pageNumber, pageSize: $("#ddlPageSize").val() || 5,search: $("#txtSearch").val().trim() })
                 .then(function (res) {
 
                     tableHelper.bind({
 
                         table: "#usersTableBody",
 
-                        columns: 6,
+                        columns: 8,
 
                         data: res.Data,
 
@@ -219,33 +276,32 @@
                         row: function (row, index) {
 
                             return $("<tr>")
-                                .append($("<td>").text(tableHelper.serialNo(1, 5, index)))
+                                .append($("<td>").text(tableHelper.serialNo(pageNumber, $("#ddlPageSize").val() || 5, index)))
                                 .append($("<td>").text([row.FirstName, row.LastName].filter(Boolean).join(" ") || row.Name || "-"))
-                                .append(
-                                    $("<td>")
-                                        .text(row.Email + " ")
-                                        .append(tableHelper.copy(row.Email))
-                                )
-                                .append($("<td>").text(row.RoleName || "-"))
+                                .append($("<td>")
+                                        .text(tableHelper.maskEmail(row.Email) + " ")
+                                        .append(tableHelper.copy(row.Email)) )
+                                .append( $("<td>")
+                                        .text(tableHelper.mask(row.MobileNo, 0, 4) + " ")
+                                        .append(tableHelper.copy(row.MobileNo)))
+                                .append($("<td>").text(row.Role || "-"))
                                 .append($("<td>").append(tableHelper.toggle(row.IsActive, row.Id, "statusToggle")))
                                 .append($("<td>").text(row.CreatedDate || "-"))
-                                .append(
-                                    $("<td>")
-                                        .addClass("text-center")
+                                .append( $("<td>")
                                         .append(tableHelper.actions.view(row.Id))
                                         .append(tableHelper.actions.edit(row.Id))
-                                        .append(tableHelper.actions.delete(row.Id))
-                                );
-
+                                        .append(tableHelper.actions.delete(row.Id)));
                         }
-
                     });
-
+                    tableHelper.pagination({
+                        pagination: res.Pagination,
+                        onPage: function (page) {
+                            loadRecentUsers(page);
+                        }
+                    });
                 })
                 .catch(function () {
-
-                    tableHelper.error("#usersTableBody", 6, "Could not load users.");
-
+                    tableHelper.error("#usersTableBody", 8, "Could not load users.");
                 });
 
         }

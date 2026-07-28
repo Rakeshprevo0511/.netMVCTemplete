@@ -86,4 +86,27 @@ public class RefreshTokenRepository : IRefreshTokenRepository
     {
         _dbContext.SaveChanges();
     }
+    public void DeleteExpiredTokens()
+    {
+        var cutoff = DateTime.UtcNow.AddDays(-7);
+
+        _dbContext.Database.ExecuteSqlCommand(@"
+        DELETE FROM RefreshTokens
+        WHERE ExpiryDate <= @p0
+           OR (IsRevoked = 1 AND CreatedAt <= @p1)",
+            DateTime.UtcNow,
+            cutoff);
+    }
+    public void DeleteExpiredTokensForUser(int userId)
+    {
+        var expiredTokens = _dbContext.RefreshTokens
+            .Where(x => x.UserId == userId && x.ExpiryDate <= DateTime.UtcNow)
+            .ToList();
+
+        if (expiredTokens.Any())
+        {
+            _dbContext.RefreshTokens.RemoveRange(expiredTokens);
+            _dbContext.SaveChanges();
+        }
+    }
 }

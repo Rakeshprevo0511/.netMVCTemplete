@@ -10,7 +10,7 @@ namespace MVCTemplete.Service.Interface
 {
     public interface IUserServices
     {
-        Task<DataTable> GetUsersAsync(int pageNumber, int pageSize, string search);
+        Task<PagedResult<UserResponseDto>> GetUsersAsync(int pageNumber, int pageSize, string search);
 
         Task<int> CreateUserAsync(UserDto model);
 
